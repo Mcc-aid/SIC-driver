@@ -1,0 +1,168 @@
+CLOCK	START	7E0E		#Starting the program at address (NUM LINES *3) - 8000 HEX = START ADDR, 32768
+BEGIN	LDA	COUNTR		#Loading the seconds into COUNTR and starting the program			
+	COMP	ZERO		#if COUNTR < 0, jump to neg for negative input processing
+	JLT	NEG		#
+	J	POS		#IF COUNTR > 0 SKIP THIS SECTION, and go to positive processing
+NEG	LDA	COUNTR		
+	AND	FLIP		#multiplying contr by negative one
+	STA	COUNTR		#Storing result into countr	
+	DIV	THRSIX		#dividing countr by 3600
+	STA	HOURS
+	LDA	HOURS		#minutes = (seconds - (hours * 3600)) / 60;
+	MUL	THRSIX		#hours*3600 --> temp
+	STA	TEMP		#
+	LDA	COUNTR		#
+	SUB	TEMP		#seconds - temp --> a
+	DIV	SIXTY		#a / 60
+	STA	MINUTE		#
+	LDA	HOURS		
+	COMP	TEN		#if hours < 10, jump to hourslessthanten
+	JLT	HLTTEN		#
+	J	HGTTEN		#otherwise go to function hoursgreatthanten
+HLTTEN	LDA	ASCII0		
+	WD	DEVICE		#adding the leading zero to the front, then writing
+	LDA	HOURS
+	ADD	ASCII0
+	WD	DEVICE		#loading hours then writing
+	J	MIN		#jump to the minute section
+HGTTEN	LDA	HOURS				
+	DIV	TEN		#dividing hours value by 10
+	STA	HRTENS		#STORING THE VALUE OF THE TENS PLACE
+	ADD	ASCII0		#ADDING TENS PLACE VALUE PLUS 48
+	STA	TEMP		#STORING
+	WD	DEVICE		#WRITING THE TENS PLACE VALUE IN ASCII
+	LDA	HRTENS		#LOADING TENS PLACE VALUE
+	MUL	TEN		#MULTIPLYING TENS VALUE BY 10
+	STA	TEMP		#STORING IN TEMP
+	LDA	HOURS		#LOADING HOURS
+	SUB	TEMP		#SUBTRACTING FROM TEMP
+	STA	HRONES		#STORING IN ONES PLACE VALUE
+	ADD	ASCII0
+	STA	TEMP
+	WD	DEVICE	
+MIN	LDA	MINUTE		#
+	COMP	TEN		#comparing 10 to minute
+	JLT	MLTTEN		#if minute is less, jump to minutelessthanten
+	J	MGTTEN		#otherwise jump to mgreaterthanten
+MLTTEN	LDA	ASCII0		
+	WD	DEVICE		#writing the leading zero
+	LDA	MINUTE		#
+	ADD	ASCII0		#writing the minute
+	WD	DEVICE		#writing the leading zero
+	J	STOP		#
+MGTTEN	LDA	MINUTE 		#
+	DIV	TEN
+	STA	MINTEN
+	ADD	ASCII0
+	WD	DEVICE		#if minute is greater than 10, just write it and exit
+	LDA	MINTEN
+	MUL	TEN
+	STA	TEMP
+	LDA	MINUTE
+	SUB	TEMP
+	STA	MINONE
+	ADD	ASCII0
+	WD	DEVICE
+	J	STOP
+POS	LDA	COUNTR		#For the 12 hr format
+	DIV	THRSIX		#
+	STA	HOURS		#dividing hrs by 3600 and storing
+	MUL	THRSIX		#Multiplying by 3600 and storing
+	STA	TEMP		#
+	LDA	COUNTR		#
+	SUB	TEMP		#subtracting the temp
+	DIV	SIXTY		#dividing by sixty
+	STA	MINUTE		
+	LDA	HOURS
+	COMP	TWELVE
+	JLT	SUB12
+	LDA	HOURS
+	SUB	TWELVE
+	STA	HOURS
+	LDA	P
+	STA	A		
+SUB12	COMP	TEN		#IF HOURS<10
+	JLT	HLT102		#JUMP
+	J	HGT102
+HLT102	LDA	ASCII0		
+	WD	DEVICE		#adding the leading zero to the front, then writing
+	LDA	HOURS		
+	ADD	ASCII0		#LOADING IN HOURS AND ADDING 48
+	STA	HRONES		#STORING THIS IN HRONES
+	LDA	HRONES
+	WD	DEVICE		
+	J	MIN2		#jump to the minute section
+HGT102	LDA	HOURS		#DIVIDING BY 10 TO GET TENS DIGIT
+	DIV	TEN		#dividing hours value by 10
+	STA	HRTENS		#STORING THE VALUE OF THE TENS PLACE
+	ADD	ASCII0		#ADDING TENS PLACE VALUE PLUS 48
+	STA	TEMP		#STORING
+	LDA	TEMP
+	WD	DEVICE		#WRITING THE TENS PLACE VALUE IN ASCII
+	LDA	HRTENS		#LOADING TENS PLACE VALUE
+	MUL	TEN		#MULTIPLYING TENS VALUE BY 10
+	STA	TEMP		#STORING IN TEMP
+	LDA	HOURS		#LOADING HOURS
+	SUB	TEMP		#SUBTRACTING FROM TEMP
+	STA	HRONES		#STORING IN ONES PLACE VALUE
+	LDA	HRONES
+	ADD	ASCII0
+	STA	TEMP
+	LDA	TEMP
+	WD	DEVICE
+	J	MIN2		
+MIN2	LDA	MINUTE		#
+	COMP	TEN		#comparing 10 to minute
+	JLT	MLT102		#if minute is less, jump to minutelessthanten
+	J	MGT102		#otherwise jump to mgreaterthanten
+MLT102	LDA	ASCII0		
+	WD	DEVICE		#writing the leading zero
+	LDA	MINUTE		#
+	ADD	ASCII0
+	STA	MINONE
+	LDA	MINONE
+	WD	DEVICE		#writing the minute
+	J	AM		#END THE PROGRAM
+MGT102	LDA	MINUTE 		#
+	DIV	TEN
+	STA	MINTEN
+	LDA	MINTEN
+	ADD	ASCII0
+	STA	TEMP
+	LDA	TEMP
+	WD	DEVICE		#if the minute is greater than 10, just write it and exit
+	LDA	MINTEN
+	MUL	TEN
+	STA	TEMP
+	LDA	MINUTE
+	SUB	TEMP
+	STA	MINONE
+	LDA	MINONE
+	ADD	ASCII0
+	STA	TEMP
+	LDA	TEMP
+	WD	DEVICE
+AM	LDA	A
+	WD	DEVICE
+STOP	LDL	ZERO
+	RSUB
+DEVICE	WORD	64
+FLIP	WORD	8388607
+ZERO	WORD	0
+MINUTE	WORD	1		#delcaring my minutes variable
+HOURS	WORD	1		#declaring my hours variable
+TEMP	WORD	1		#declaring the temp variable
+NEGONE	WORD	-1		#declaring the negative one variable
+THRSIX	WORD	3600 
+SIXTY	WORD	60
+TWELVE	WORD	12
+TEN	WORD	10
+ASCII0	WORD	48		#ASCII VALUE FOR 0 IS 48
+HRTENS	WORD	1
+HRONES	WORD	1
+MINTEN	WORD	1
+MINONE	WORD	1
+A	WORD	65
+P	WORD	80
+COUNTR	RESW	1
+	END	BEGIN
